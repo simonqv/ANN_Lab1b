@@ -32,52 +32,55 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
 
   N_A_left = int(frac_left_A * N / 2)
   N_A_right = int(frac_right_A * N / 2)
-
-  y_A_left = y_A[:N_A_left]
-  y_A_right = y_A[N_A_left:]
+  
 
   if(not special):
-    frac_A = frac_left_A + frac_right_A
-
-    temp = zip(np.concatenate(x_A_left, x_A_right), y_A)
-    np.random.shuffle(temp)
-    x_A, y_A = zip(*temp)
-
-    x_A = x_A[:N*frac_A]
-    y_A = y_A[:N*frac_A]
+    frac_A = N_A_left + N_A_right
+ 
+    x_A = np.concatenate((x_A_left, x_A_right))
+    p = np.random.permutation(len(x_A))
+    x_A = x_A[p]
+    y_A = y_A[p]
+   
+    x_A = x_A[:frac_A]
+    y_A = y_A[:frac_A]
 
   else:
-    # TODO: frac left * xleft och frac right * xright
+    y_A_left = y_A[:N_A_left]
+    middle = int(len(y_A)/2)
+    y_A_right = y_A[middle:middle+N_A_right] ##TODO: check divisions to make even
 
-  
-  
+    # choose number of values specified by frac (they are already in random order so no shuffle here, do big shuffle together with B)
+    x_A_left = x_A_left[:len(y_A_left)]
+    x_A_right = x_A_right[:len(y_A_right)]
+    x_A = np.concatenate((x_A_left, x_A_right))
+    y_A = np.concatenate((y_A_left, y_A_right))
+    N_A_left = len(x_A_left)
+    N_A_right = len(x_A_right)
+
+  # get slice of B
+  frac_B = int(frac_B)
+  x_B = x_B[:frac_B*N]
+  y_B = y_B[:frac_B*N]
+
+  targets = np.concatenate((np.ones(N_A_left + N_A_right), (np.ones(frac_B*N) * -1)))
+
+  #shuffle the entire partial dataset
+  p2 = np.random.permutation(len(targets))
+  x = np.concatenate((x_A, x_B))[p2]
+  y = np.concatenate((y_A, y_B))[p2]
+  targets = targets[p2]
+
+  classA = [x_A, y_A]
+  classB = [x_B, y_B]
+
+  return x, y, targets, classA, classB
 
 
-
-  # extract subset 
-  slice_x_A = xA_left[:s_A_left_val] + xA_right[:s_A_right_val]
-  slice_y_A = yA_left[:s_A_left_val] + yA_right[:s_A_right_val]
-  classA = [slice_x_A, slice_y_A]
-  print("left ", xA_left[:s_A_left_val], "\n")
-  print("right ", xA_right[:s_A_right_val], "\n")
-  print(slice_x_A)
+x_A_left, x_A_right, y_A, x_B, y_B, init_w = generate()
+x_coord, y_coord, target, classA, classB = sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, 0.25, 0.25, 1.0, False)
 
 
-  slice_x_B = xB[:s_B] 
-  slice_y_B = yB[:s_B] 
-  classB = [slice_x_B, slice_y_B]
-    
-
-    targets_perceptron = np.ones(s_A_left_val + s_A_right_val).tolist() + np.zeros(s_B).tolist()
-    targets_delta = np.ones(s_A_left_val + s_A_right_val).tolist() + (np.ones(s_B) * -1).tolist()
-
-    temp = list(zip(slice_x_A + slice_x_B, slice_y_A + slice_y_B, targets_perceptron, targets_delta))
-    random.shuffle(temp)
-    x_coord, y_coord, target_p, target_d = zip(*temp)
-    x_coord, y_coord, target_p, target_d = list(x_coord), list(y_coord), list(target_p), list(target_d)
-
-    return x_coord, y_coord, target_p, target_d, classA, classB
-
-
-'''
-
+plt.scatter(classA[0], classA[1])
+plt.scatter(classB[0], classB[1])
+plt.show()
