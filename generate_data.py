@@ -1,11 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 # constant N
 N = 100
 
-def generate():
 
+def generate():
     # Class A
     mean_A = [1.0, 0.3]
     sigma_A = 0.2
@@ -29,14 +28,12 @@ def generate():
 
 
 def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, frac_B, special=False):
-
     N_A_left = int(frac_left_A * N / 2)
     N_A_right = int(frac_right_A * N / 2)
 
-
-    if(not special):
+    if (not special):
         frac_A = N_A_left + N_A_right
- 
+
         x_A = np.concatenate((x_A_left, x_A_right))
         p = np.random.permutation(len(x_A))
         x_A = x_A[p]
@@ -47,8 +44,8 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
 
     else:
         y_A_left = y_A[:N_A_left]
-        middle = int(len(y_A)/2)
-        y_A_right = y_A[middle:middle+N_A_right] ##TODO: check divisions to make even
+        middle = int(len(y_A) / 2)
+        y_A_right = y_A[middle:middle + N_A_right]  ##TODO: check divisions to make even
 
         # choose number of values specified by frac (they are already in random order so no shuffle here, do big shuffle together with B)
         x_A_left = x_A_left[:len(y_A_left)]
@@ -60,12 +57,12 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
 
     # get slice of B
     frac_B = int(frac_B)
-    x_B = x_B[:frac_B*N]
-    y_B = y_B[:frac_B*N]
+    x_B = x_B[:frac_B * N]
+    y_B = y_B[:frac_B * N]
 
-    targets = np.concatenate((np.ones(N_A_left + N_A_right), (np.ones(frac_B*N) * -1)))
+    targets = np.concatenate((np.ones(N_A_left + N_A_right), (np.ones(frac_B * N) * -1)))
 
-    #shuffle the entire partial dataset
+    # shuffle the entire partial dataset
     p2 = np.random.permutation(len(targets))
     x = np.concatenate((x_A, x_B))[p2]
     y = np.concatenate((y_A, y_B))[p2]
@@ -75,12 +72,10 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
     classB = [x_B, y_B]
     input_arr = np.array([x, y, np.ones(len(x))])
 
-
     return input_arr, targets, classA, classB
+
 
 def get_data():
     x_A_left, x_A_right, y_A, x_B, y_B, init_w = generate()
     input_arr, target, classA, classB = sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, 1.0, 1.0, 1.0, False)
     return input_arr, target, classA, classB, init_w
-
-
