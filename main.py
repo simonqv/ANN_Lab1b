@@ -36,7 +36,9 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
         v += delta_v
         w += delta_w
 
-    return 0
+    print(v.shape, w.shape)
+    print(w)
+    return w
 
 def create_init_weights(n_hidden):
     #  init weight v from input to hidden layer is 3 (Xx, Xy, bias) times number of nodes in layer
@@ -50,20 +52,22 @@ def create_init_weights(n_hidden):
     return init_v, init_w
 
 
+
+
 def main():
 
     input_arr, targets, classA, classB, init_w = gen.get_data()
     
-    print("#########TARGET#########", targets)
-    n_hidden = 7
-    init_v, init_w = create_init_weights(n_hidden)
-
-    # For task 1 make a loop here for different n_hidden
-    generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets)
-
+    # scatter plot
     plt.scatter(classA[0], classA[1])
     plt.scatter(classB[0], classB[1])
     plt.show()
+    
+    n_hidden = 5
+    init_v, init_w = create_init_weights(n_hidden)
+    # For task 1 make a loop here for different n_hidden
+    w = generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets)
+    print(w)
 
 
 
