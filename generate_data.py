@@ -23,7 +23,7 @@ def generate():
   init_weight_x_r = np.random.normal(0, 0.2)
   init_weight_y_r = np.random.normal(0, 0.2)
   theta = 1
-  init_w = [init_weight_x_r, init_weight_y_r, -theta]
+  init_w = np.array([init_weight_x_r, init_weight_y_r, -theta])
 
   return x_A_left, x_A_right, y_A, x_B, y_B, init_w
   
@@ -73,14 +73,14 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
 
   classA = [x_A, y_A]
   classB = [x_B, y_B]
+  input_arr = np.array([x, y, np.ones(len(x))])
+  
 
-  return x, y, targets, classA, classB
+  return input_arr, targets, classA, classB
+
+def get_data():
+  x_A_left, x_A_right, y_A, x_B, y_B, init_w = generate()
+  input_arr, target, classA, classB = sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, 1.0, 1.0, 1.0, False)
+  return input_arr, target, classA, classB, init_w
 
 
-x_A_left, x_A_right, y_A, x_B, y_B, init_w = generate()
-x_coord, y_coord, target, classA, classB = sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, 0.25, 0.25, 1.0, False)
-
-
-plt.scatter(classA[0], classA[1])
-plt.scatter(classB[0], classB[1])
-plt.show()
