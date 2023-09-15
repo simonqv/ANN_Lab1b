@@ -1,4 +1,13 @@
 import numpy as np
+from enum import Enum
+
+
+class Task(Enum):
+    T1 = 1
+    T2_1 = 2
+    T2_2 = 3
+    T2_3 = 4
+
 
 # constant N
 N = 100
@@ -31,7 +40,7 @@ def sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, frac_left_A, frac_right_A, 
     N_A_left = int(frac_left_A * N / 2)
     N_A_right = int(frac_right_A * N / 2)
 
-    if (not special):
+    if not special:
         frac_A = N_A_left + N_A_right
 
         x_A = np.concatenate((x_A_left, x_A_right))
@@ -79,3 +88,4 @@ def get_data():
     x_A_left, x_A_right, y_A, x_B, y_B, init_w = generate()
     input_arr, target, classA, classB = sub_sampling(x_A_left, x_A_right, y_A, x_B, y_B, 1.0, 1.0, 1.0, False)
     return input_arr, target, classA, classB, init_w
+
