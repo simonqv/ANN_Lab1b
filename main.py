@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plot_drawer as plotter
 
-ETA = 0.01
+ETA = 0.1
 EPOCHS = 30
-N_HIDDEN = [1, 2, 3, 4, 5]
+N_HIDDEN = [2, 4, 8, 10, 20, 30]
 
 
 def create_init_weights(n_hidden):
@@ -68,7 +68,6 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
 def count_misses_per_epoch(out, targets):
     correct = 0
     miss = 0
-    print(targets)
     for i, target in enumerate(targets):
         if out[0, i] >= 0 and targets[i] == 1:
             correct += 1
@@ -90,8 +89,8 @@ def count_misses_per_hidden_n(out_list, targets):
                 correct += 1
             else:
                 miss += 1
-        # print(f"N = {N_HIDDEN[ind]} correct = ", correct)
-        # print(f"N = {N_HIDDEN[ind]} miss    = ", miss)
+        print(f"N = {N_HIDDEN[ind]} correct = ", correct)
+        print(f"N = {N_HIDDEN[ind]} miss    = ", miss)
 
 
 def main():
