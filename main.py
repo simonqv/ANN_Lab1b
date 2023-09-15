@@ -5,7 +5,7 @@ import plot_drawer as plotter
 
 ETA = 0.1
 EPOCHS = 30
-N_HIDDEN = [2, 4, 8, 10, 20, 30]
+N_HIDDEN = [5]
 
 
 def create_init_weights(n_hidden):
@@ -19,6 +19,61 @@ def create_init_weights(n_hidden):
 
     return init_v, init_w
 
+def generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets):
+    number_of_inputs = len(input_arr[0])
+    # n_hidden is the number of nodes in the hidden layer
+    v = init_v
+    w = init_w
+    theta = 0
+    psi = 0
+    mse = []
+    miss_ratio = []
+
+    for epoch in range(EPOCHS):
+        out_list = []  # Used for accumulating all out values for each epoch 
+        sum = 0         # Used for calculating the mse error
+        for i in range(number_of_inputs):
+            input = np.array([[input_arr[0][i]], [input_arr[1][i]], [input_arr[2][i]]])
+            target = np.array([[targets[i]]])
+
+            # Forward pass
+            h_in = np.dot(v, input)
+            h_out = 2 / (1 + np.exp(-h_in)) - 1
+            h_out = np.vstack((h_out, np.ones((1, len(h_out[0])))))
+
+            o_in = np.dot(w, h_out)
+            out = (2 / (1 + np.exp(-o_in))) - 1
+    
+            # Backward pass
+            delta_o = (out - target) * ((1 + out) * (1 - out)) * 0.5
+            delta_h = (w.T * delta_o) * ((1 + h_out) * (1 - h_out)) * 0.5
+            delta_h = delta_h[:n_hidden, :]
+
+            # Weight update with momentum
+            alfa = 0.9
+
+            # Theta is for v and psi is for w
+            theta = alfa * theta - (1 - alfa) * np.dot(delta_h, input.T)
+            psi = alfa * psi - (1 - alfa) * np.dot(delta_o, h_out.T)
+            delta_v = ETA * theta
+            delta_w = ETA * psi
+
+            v += delta_v
+            w += delta_w
+
+            # Accumulate mse sum
+            sum += (target - out)[0][0]**2
+
+            # Collect 'out' values 
+            out_list.append(out)
+        
+        # Add to MSE list
+        mse.append(sum/number_of_inputs)
+       
+        # Count number of misses per epoch
+        out_list = np.array(out_list).reshape(1, 200)
+        miss_ratio.append(count_misses_per_epoch(out_list, targets))
+    return v, w, mse, out, miss_ratio
 
 def forward_pass(v, w, input_arr):
     h_in = np.dot(v, input_arr)
@@ -38,7 +93,6 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
     psi = 0
     mse = []
     miss_ratio = []
-
     for i in range(EPOCHS):
         # forward pass
         h_out, out = forward_pass(v, w, input_arr)
@@ -66,7 +120,6 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
         # Count number of misses per epoch
         miss_ratio.append(count_misses_per_epoch(out, targets))
 
-    print(v.shape, w.shape)
     return v, w, mse, out, miss_ratio
 
 
@@ -104,13 +157,13 @@ def count_misses_per_hidden_n(out_list, targets):
         print(f"N = {N_HIDDEN[ind]} miss    = ", miss)
 
 
+
 def task1_1(input_arr, targets):
     mse_list = []
     v_list = []
     w_list = []
     out_list = []
     miss_ratio_list = []
-
     for n_hidden in N_HIDDEN:
         init_v, init_w = create_init_weights(n_hidden)
         v, w, mse, out, miss_ratio = generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets)
@@ -131,7 +184,30 @@ def task1_1(input_arr, targets):
     plt.figure(3)
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
+    
+def task1_2_seq(input_arr, targets):
+    # Task 2 - sequential delta question
+    mse_list = []
+    v_list = []
+    w_list = []
+    out_list = []
+    miss_ratio_list = []
 
+    for n_hidden in N_HIDDEN:
+        init_v, init_w = create_init_weights(n_hidden)
+        v, w, mse, out, miss_ratio = generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets)
+        mse_list.append(mse)
+        miss_ratio_list.append(miss_ratio)
+
+    # make MSE plot
+    plt.figure(1)
+    plotter.draw_mse_or_miss_rate(mse_list, N_HIDDEN, EPOCHS, "Mean Square Error")
+    plt.show()
+
+    # make miss rate plot
+    plt.figure(4)
+    plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
+    plt.show()
 
 def task1_2(input_arr, targets, a_frac, b_frac):
     train_set_A = []
@@ -172,6 +248,8 @@ def main():
     # task1_1(input_arr, targets)
 
     task1_2(input_arr, targets)
+    
+    task1_2_seq(input_arr, targets)
 
 
 main()
