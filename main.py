@@ -75,6 +75,16 @@ def generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets):
         miss_ratio.append(count_misses_per_epoch(out_list, targets))
     return v, w, mse, out, miss_ratio
 
+def forward_pass(v, w, input_arr):
+    h_in = np.dot(v, input_arr)
+    h_out = 2 / (1 + np.exp(-h_in)) - 1
+    h_out = np.vstack((h_out, np.ones((1, len(h_out[0])))))
+
+    o_in = np.dot(w, h_out)
+    out = (2 / (1 + np.exp(-o_in))) - 1
+    return h_out, out
+
+
 def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
     # n_hidden is the number of nodes in the hidden layer
     v = init_v
@@ -85,12 +95,7 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
     miss_ratio = []
     for i in range(EPOCHS):
         # forward pass
-        h_in = np.dot(v, input_arr)
-        h_out = 2 / (1 + np.exp(-h_in)) - 1
-        h_out = np.vstack((h_out, np.ones((1, len(h_out[0])))))
-
-        o_in = np.dot(w, h_out)
-        out = (2 / (1 + np.exp(-o_in))) - 1
+        h_out, out = forward_pass(v, w, input_arr)
 
         # backward pass
         delta_o = (out - targets) * ((1 + out) * (1 - out)) * 0.5
@@ -119,6 +124,12 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
 
 
 def count_misses_per_epoch(out, targets):
+    """
+    Counts how many misses and hits per epoch.
+    :param out: predicted output
+    :param targets: targeted output
+    :return: rate of misclassified predictions
+    """
     correct = 0
     miss = 0
     for i, target in enumerate(targets):
@@ -146,10 +157,8 @@ def count_misses_per_hidden_n(out_list, targets):
         print(f"N = {N_HIDDEN[ind]} miss    = ", miss)
 
 
-def main():
-    input_arr, targets, classA, classB, init_w = gen.get_data()
 
-    '''# Task 1
+def task1_1(input_arr, targets):
     mse_list = []
     v_list = []
     w_list = []
@@ -166,14 +175,6 @@ def main():
 
     count_misses_per_hidden_n(out_list, targets)
 
-    # make scatter plot and boundaries
-    """
-    plt.figure(1)
-    plotter.draw_scatter(classA, classB)
-    plotter.draw_boundaries(v_list, input_arr)
-    plt.show()
-    """
-
     # make MSE plot
     plt.figure(2)
     plotter.draw_mse_or_miss_rate(mse_list, N_HIDDEN, EPOCHS, "Mean Square Error")
@@ -183,8 +184,8 @@ def main():
     plt.figure(3)
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
-    '''
     
+def task1_2_seq(input_arr, targets):
     # Task 2 - sequential delta question
     mse_list = []
     v_list = []
@@ -207,5 +208,48 @@ def main():
     plt.figure(4)
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
+
+def task1_2(input_arr, targets, a_frac, b_frac):
+    train_set_A = []
+    val_set_A = []
+    train_set_B = []
+    val_set_B = []
+    counter_a = 0
+    counter_b = 0
+
+    for i, target in enumerate(targets):
+        if target == -1:
+            if counter_b / len(targets) < b_frac:
+                train_set_B.append(input_arr[i])
+                counter_b += 1
+            else:
+                val_set_B.append(input_arr[i])
+        elif target == 1:
+            if counter_a / len(targets) < a_frac:
+                train_set_A.append(input_arr[i])
+                counter_a += 1
+            else:
+                val_set_A.append(input_arr[i])
+        else:
+            print(target, i)
+
+    return train_set_A, train_set_B, val_set_A, val_set_B
+
+
+def main():
+    input_arr, targets, classA, classB, _ = gen.get_data()
+
+    # make scatter plot and boundaries
+
+    plt.figure(1)
+    plotter.draw_scatter(classA, classB)
+    plt.show()
+
+    # task1_1(input_arr, targets)
+
+    task1_2(input_arr, targets)
+    
+    task1_2_seq(input_arr, targets)
+
 
 main()
