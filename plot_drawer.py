@@ -32,12 +32,12 @@ def draw_boundaries(v_list, input_array):
             draw_plot(line, x_axis, label=f"Line: {i+1}")
 
 
-def draw_mse(mse_list, n_hidden, epochs):
+def draw_mse_or_miss_rate(mse_list, n_hidden, epochs, plot_title):
     for i, n in enumerate(n_hidden):
         x_axis = np.linspace(0, epochs, epochs)
-        plt.plot(x_axis, mse_list[i], label=f"MSE for {n} hidden nodes ")
+        plt.plot(x_axis, mse_list[i], label=f"{plot_title} for {n} hidden nodes ")
 
-    plt.ylabel("Mean Square Error")
+    plt.ylabel(plot_title)
     plt.xlabel("Epoch")
-    plt.title("Mean Square Error for different number of hidden nodes")
+    plt.title(f"{plot_title} for different number of hidden nodes")
     plt.legend()
