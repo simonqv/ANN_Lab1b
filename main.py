@@ -209,47 +209,104 @@ def task1_2_seq(input_arr, targets):
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
 
-def task1_2(input_arr, targets, a_frac, b_frac):
-    train_set_A = []
-    val_set_A = []
-    train_set_B = []
-    val_set_B = []
+def train_val_split(input_arr, targets, a_frac, b_frac):
     counter_a = 0
     counter_b = 0
+    
+    size_train = int((len(targets)/2) * (a_frac + b_frac))
+    train_set = np.empty((3,1))
+    val_set = np.empty((3,1))
+    train_targets = np.empty((1,))
+    val_targets = np.empty((1,))
+    
+    for i, target in enumerate(targets):
+    
+        if target == -1:
+            if counter_b / (len(targets) /2) < b_frac:
+                train_set = np.hstack((train_set, np.reshape(input_arr[:,i], (3,1))))
+                train_targets = np.concatenate((train_targets, [target]))
+                counter_b += 1
+            else:
+                val_set = np.hstack((val_set, np.reshape(input_arr[:,i], (3,1))))
+                val_targets = np.concatenate((val_targets, [target]))
+        
+        elif target == 1:
+            if counter_a / (len(targets) /2) < a_frac:
+                train_set = np.hstack((train_set, np.reshape(input_arr[:, i], (3,1))))
+                val_targets = np.concatenate((val_targets, [target]))
+                counter_a += 1
+            else:
+                val_set = np.hstack((val_set, np.reshape(input_arr[:,i], (3,1))))
+                val_targets = np.concatenate((val_targets, [target]))
+
+    return train_set[:, 1:], val_set[:, 1:], train_targets[1:], val_targets[1:]
+
+
+def special_train_val_split(input_arr, targets, l_frac, r_frac):
+    counter_a_left = 0
+    counter_a_right = 0
+
+    size_train = int((len(targets)/2) * (l_frac + r_frac + 1))
+    train_set = np.empty((3,1))
+    val_set = np.empty((3,1))
+    train_targets = np.empty((1,))
+    val_targets = np.empty((1,))
 
     for i, target in enumerate(targets):
         if target == -1:
-            if counter_b / len(targets) < b_frac:
-                train_set_B.append(input_arr[i])
-                counter_b += 1
-            else:
-                val_set_B.append(input_arr[i])
-        elif target == 1:
-            if counter_a / len(targets) < a_frac:
-                train_set_A.append(input_arr[i])
-                counter_a += 1
-            else:
-                val_set_A.append(input_arr[i])
+            train_set = np.hstack((train_set, np.reshape(input_arr[:,i], (3,1))))
+            train_targets = np.concatenate((train_targets, [target]))
+
         else:
-            print(target, i)
+            if input_arr[0,i] < 0 and counter_a_left / (len(targets)/4) < l_frac:
+                train_set = np.hstack((train_set, np.reshape(input_arr[:,i], (3,1))))
+                train_targets = np.concatenate((train_targets, [target]))
+                counter_a_left += 1
 
-    return train_set_A, train_set_B, val_set_A, val_set_B
+            elif input_arr[0,i] >= 0 and counter_a_right / (len(targets)/4) < r_frac:
+                train_set = np.hstack((train_set, np.reshape(input_arr[:,i], (3,1))))
+                train_targets = np.concatenate((train_targets, [target]))
+                counter_a_right += 1
 
+            else:
+                val_set = np.hstack((val_set, np.reshape(input_arr[:,i], (3,1))))
+                val_targets = np.concatenate((val_targets, [target]))
+    print(counter_a_left, counter_a_right)
+            
+    return train_set[:, 1:], val_set[:, 1:], train_targets[1:], val_targets[1:]
+
+
+def task1_2(input_arr, targets, a_frac, b_frac, special=False):
+    if not special:
+        train_set, val_set, train_targets, val_targets = train_val_split(input_arr, targets, a_frac, b_frac)
+        print(train_set.shape, val_set.shape, train_targets.shape, val_targets.shape)
+    else:
+        train_set, val_set, train_targets, val_targets = special_train_val_split(input_arr, targets, a_frac, b_frac)
+        print(train_set.shape, val_set.shape, train_targets.shape, val_targets.shape)    
+    
 
 def main():
     input_arr, targets, classA, classB, _ = gen.get_data()
 
     # make scatter plot and boundaries
-
+    '''
     plt.figure(1)
     plotter.draw_scatter(classA, classB)
     plt.show()
 
+    '''
     # task1_1(input_arr, targets)
 
-    task1_2(input_arr, targets)
+    # Task 1.2 a) 25% of each
+    task1_2(input_arr, targets, 0.25, 0.25)
     
-    task1_2_seq(input_arr, targets)
+    # Task 1.2 b) 50% of a
+    # task1_2(input_arr, targets, 0.5, 1.0)
+
+    # Task 1.2 c) special case, here a_frac is left, b_frac is right
+    task1_2(input_arr, targets, 0.2, 0.8, True)
+
+    #task1_2_seq(input_arr, targets)
 
 
 main()
