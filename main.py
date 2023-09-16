@@ -85,6 +85,25 @@ def forward_pass(v, w, input_arr):
     return h_out, out
 
 
+def backward_pass_and_update(n_hidden, input_arr, targets, w, v, out, h_out, theta, psi):
+    delta_o = (out - targets) * ((1 + out) * (1 - out)) * 0.5
+    delta_h = (w.T * delta_o) * ((1 + h_out) * (1 - h_out)) * 0.5
+    delta_h = delta_h[:n_hidden, :]
+
+    # weight update with momentum
+    alfa = 0.9
+
+    # theta is for v and psi is for w.
+    theta = alfa * theta - (1 - alfa) * np.dot(delta_h, input_arr.T)
+    psi = alfa * psi - (1 - alfa) * np.dot(delta_o, h_out.T)
+    delta_v = ETA * theta
+    delta_w = ETA * psi
+
+    v += delta_v
+    w += delta_w
+    return v, w, theta, psi
+
+
 def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
     # n_hidden is the number of nodes in the hidden layer
     v = init_v
@@ -98,21 +117,7 @@ def generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets):
         h_out, out = forward_pass(v, w, input_arr)
 
         # backward pass
-        delta_o = (out - targets) * ((1 + out) * (1 - out)) * 0.5
-        delta_h = (w.T * delta_o) * ((1 + h_out) * (1 - h_out)) * 0.5
-        delta_h = delta_h[:n_hidden, :]
-
-        # weight update with momentum
-        alfa = 0.9
-
-        # theta is for v and psi is for w.
-        theta = alfa * theta - (1 - alfa) * np.dot(delta_h, input_arr.T)
-        psi = alfa * psi - (1 - alfa) * np.dot(delta_o, h_out.T)
-        delta_v = ETA * theta
-        delta_w = ETA * psi
-
-        v += delta_v
-        w += delta_w
+        v, w, theta, psi = backward_pass_and_update(n_hidden, input_arr, targets, w, v, out, h_out, theta, psi)
 
         # Add to MSE list
         mse.append(np.sum((targets - out) ** 2) / len(out[0]))
@@ -132,6 +137,8 @@ def count_misses_per_epoch(out, targets):
     """
     correct = 0
     miss = 0
+    print(out.shape)
+    print(targets.shape)
     for i, target in enumerate(targets):
         if out[0, i] >= 0 and targets[i] == 1:
             correct += 1
@@ -233,14 +240,13 @@ def train_val_split(input_arr, targets, a_frac, b_frac):
         elif target == 1:
             if counter_a / (len(targets) /2) < a_frac:
                 train_set = np.hstack((train_set, np.reshape(input_arr[:, i], (3,1))))
-                val_targets = np.concatenate((val_targets, [target]))
+                train_targets = np.concatenate((val_targets, [target]))
                 counter_a += 1
             else:
                 val_set = np.hstack((val_set, np.reshape(input_arr[:,i], (3,1))))
                 val_targets = np.concatenate((val_targets, [target]))
 
     return train_set[:, 1:], val_set[:, 1:], train_targets[1:], val_targets[1:]
-
 
 def special_train_val_split(input_arr, targets, l_frac, r_frac):
     counter_a_left = 0
@@ -275,15 +281,66 @@ def special_train_val_split(input_arr, targets, l_frac, r_frac):
             
     return train_set[:, 1:], val_set[:, 1:], train_targets[1:], val_targets[1:]
 
-
 def task1_2(input_arr, targets, a_frac, b_frac, special=False):
     if not special:
         train_set, val_set, train_targets, val_targets = train_val_split(input_arr, targets, a_frac, b_frac)
         print(train_set.shape, val_set.shape, train_targets.shape, val_targets.shape)
     else:
         train_set, val_set, train_targets, val_targets = special_train_val_split(input_arr, targets, a_frac, b_frac)
-        print(train_set.shape, val_set.shape, train_targets.shape, val_targets.shape)    
     
+    mse_list = []
+    mse_list_val = []
+    v_list = []
+    w_list = []
+    out_list_train = []
+    out_list_val = []
+    miss_ratio_list_train = []
+    miss_ratio_list_val = []
+
+    for n_hidden in N_HIDDEN:
+        init_v, init_w = create_init_weights(n_hidden)
+        
+        # Training section
+        v, w, mse, out, miss_ratio = generalised_d_batch(n_hidden, init_v, init_w, input_arr, targets)
+        
+        # Stuff for plotting
+        v_list.append(v)
+        w_list.append(w)
+        mse_list.append(mse)
+        out_list_train.append(out)
+        miss_ratio_list_train.append(miss_ratio)
+
+
+        # Validation section
+        _, out_v = forward_pass(v, w, val_set)
+        # out_list_val.append(out_v)
+        # Calculate miss ratio on validation set
+        miss_ratio_list_val.append(count_misses_per_epoch(out_v, val_targets))
+        # Calculate MSE on validation set
+        
+        # TODO: This one breaks, dimmensions wrong in nparrays? (30,) (1,)
+        mse_list_val.append(np.sum((val_targets - out_v) ** 2) / len(out_v[0]))
+    
+
+    # make MSE plot
+    plt.figure(2)
+    plotter.draw_mse_or_miss_rate(mse_list, N_HIDDEN, EPOCHS, "MSE Training")
+    plotter.draw_mse_or_miss_rate(mse_list_val, N_HIDDEN, EPOCHS, "MSE Validation")
+    plt.show()
+
+    # make miss rate plot
+    plt.figure(3)
+    plotter.draw_mse_or_miss_rate(miss_ratio_list_train, N_HIDDEN, EPOCHS, "Misclassification Rate Training")
+    plotter.draw_mse_or_miss_rate(miss_ratio_list_val, N_HIDDEN, EPOCHS, "Misclassification Rate Validation")
+    plt.show()
+    
+    """
+    # count misses during training
+    count_misses_per_hidden_n(out_list_train, targets)
+    # count misses during validation
+    count_misses_per_hidden_n(out_list_val, targets)
+    """
+
 
 def main():
     input_arr, targets, classA, classB, _ = gen.get_data()
@@ -304,7 +361,7 @@ def main():
     # task1_2(input_arr, targets, 0.5, 1.0)
 
     # Task 1.2 c) special case, here a_frac is left, b_frac is right
-    task1_2(input_arr, targets, 0.2, 0.8, True)
+    # task1_2(input_arr, targets, 0.2, 0.8, True)
 
     #task1_2_seq(input_arr, targets)
 
