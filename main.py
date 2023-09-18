@@ -38,29 +38,10 @@ def generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets):
             target = np.array([[targets[i]]])
 
             # Forward pass
-            h_in = np.dot(v, input)
-            h_out = 2 / (1 + np.exp(-h_in)) - 1
-            h_out = np.vstack((h_out, np.ones((1, len(h_out[0])))))
-
-            o_in = np.dot(w, h_out)
-            out = (2 / (1 + np.exp(-o_in))) - 1
+            h_out, out = forward_pass(v, w, input)
 
             # Backward pass
-            delta_o = (out - target) * ((1 + out) * (1 - out)) * 0.5
-            delta_h = (w.T * delta_o) * ((1 + h_out) * (1 - h_out)) * 0.5
-            delta_h = delta_h[:n_hidden, :]
-
-            # Weight update with momentum
-            alfa = 0.9
-
-            # Theta is for v and psi is for w
-            theta = alfa * theta - (1 - alfa) * np.dot(delta_h, input.T)
-            psi = alfa * psi - (1 - alfa) * np.dot(delta_o, h_out.T)
-            delta_v = ETA * theta
-            delta_w = ETA * psi
-
-            v += delta_v
-            w += delta_w
+            v, w, theta, psi = backward_pass_and_update(n_hidden, input, target,w,v,out,h_out,theta,psi)
 
             # Accumulate mse sum
             sum += (target - out)[0][0] ** 2
@@ -72,7 +53,7 @@ def generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets):
         mse.append(sum / number_of_inputs)
 
         # Count number of misses per epoch
-        out_list = np.array(out_list).reshape(1, 200)
+        out_list = np.array(out_list).reshape(1, len(targets))
         miss_ratio.append(count_misses_per_epoch(out_list, targets))
     return v, w, mse, out, miss_ratio
 
@@ -192,29 +173,46 @@ def task1_1(input_arr, targets):
     plt.show()
 
 
-def task1_2_seq(input_arr, targets):
+def task1_2_seq(train_input, train_targets, val_inputs, val_targets, validation=False):
+
     # Task 2 - sequential delta question
-    mse_list = []
+    mse_list_train = []
+    mse_list_val = []
     v_list = []
     w_list = []
     out_list = []
     miss_ratio_list = []
+    miss_ratio_list_val = []
+    sum = 0
 
     for n_hidden in N_HIDDEN:
         init_v, init_w = create_init_weights(n_hidden)
-        v, w, mse, out, miss_ratio = generalised_d_sequential(n_hidden, init_v, init_w, input_arr, targets)
-        mse_list.append(mse)
+        v, w, mse, out, miss_ratio = generalised_d_sequential(n_hidden, init_v, init_w, train_input, train_targets)
+        mse_list_train.append(mse)
         miss_ratio_list.append(miss_ratio)
+
+        if(validation):
+            for i in range(len(train_input)):
+                _, val_out = forward_pass(v, w, val_inputs)
+                sum += (val_targets - val_out) ** 2
+            sum = sum / len(val_out)
+            mse_list_val.append(sum)
+            misses_val = count_misses_per_epoch(val_out, val_targets)
+            miss_ratio_list_val.append(misses_val)
+
+    
 
     # make MSE plot
     plt.figure(1)
-    plotter.draw_mse_or_miss_rate(mse_list, N_HIDDEN, EPOCHS, "Mean Square Error")
+    plotter.draw_mse_or_miss_rate(mse_list_train, N_HIDDEN, EPOCHS, "Mean Square Error")
     plt.show()
 
     # make miss rate plot
     plt.figure(4)
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
+
+    return mse_list_val, miss_ratio_list_val
 
 
 def train_val_split(input_arr, targets, a_frac, b_frac):
@@ -241,7 +239,7 @@ def train_val_split(input_arr, targets, a_frac, b_frac):
         elif target == 1:
             if counter_a / (len(targets) / 2) < a_frac:
                 train_set = np.hstack((train_set, np.reshape(input_arr[:, i], (3, 1))))
-                train_targets = np.concatenate((val_targets, [target]))
+                train_targets = np.concatenate((train_targets, [target]))
                 counter_a += 1
             else:
                 val_set = np.hstack((val_set, np.reshape(input_arr[:, i], (3, 1))))
@@ -262,8 +260,8 @@ def special_train_val_split(input_arr, targets, l_frac, r_frac):
 
     for i, target in enumerate(targets):
         if target == -1:
-            train_set = np.hstack((train_set, np.reshape(input_arr[:, i], (3, 1))))
-            train_targets = np.concatenate((train_targets, [target]))
+            val_set = np.hstack((train_set, np.reshape(input_arr[:, i], (3, 1))))
+            val_targets = np.concatenate((train_targets, [target]))
 
         else:
             if input_arr[0, i] < 0 and counter_a_left / (len(targets) / 4) < l_frac:
@@ -322,7 +320,9 @@ def task1_2(input_arr, targets, a_frac, b_frac, special=False):
         # Count mse
         mse_list_val.append(np.sum((val_targets - out_v) ** 2) / len(out_v[0]))
 
-    return mse_list_val, miss_ratio_list_val
+
+
+    return mse_list_val, miss_ratio_list_val, train_set, train_targets, val_set, val_targets
 
 
 def task1_2_graph(mse_list_val, miss_ratio_list_val ):
@@ -356,19 +356,22 @@ def main():
     # task1_1(input_arr, targets)
 
     # Task 1.2 a) 25% of each
-    mse_list_a, miss_ratio_a = task1_2(input_arr, targets, 0.25, 0.25)
+    mse_list_a, miss_ratio_a, train_set_a, train_targets_a, val_set_a, val_targets_a = task1_2(input_arr, targets, 0.25, 0.25)
+    mse_seq_a, miss_seq_a = task1_2_seq(train_set_a, train_targets_a, val_set_a, val_targets_a, True)
 
     # Task 1.2 b) 50% of a
-    mse_list_b, miss_ratio_b = task1_2(input_arr, targets, 0.5, 0.0)
+    mse_list_b, miss_ratio_b, train_set_b, train_targets_b, val_set_b, val_targets_b = task1_2(input_arr, targets, 0.5, 0.0)
+    mse_seq_b, miss_seq_b = task1_2_seq(train_set_b, train_targets_b, val_set_b, val_targets_b, True)
 
     # Task 1.2 c) special case, here a_frac is left, b_frac is right
-    mse_list_c, miss_ratio_c = task1_2(input_arr, targets, 0.2, 0.8, True)
+    mse_list_c, miss_ratio_c, train_set_c, train_targets_c, val_set_c, val_targets_c = task1_2(input_arr, targets, 0.2, 0.8, True)
+    mse_seq_c, miss_seq_c = task1_2_seq(train_set_c, train_targets_c, val_set_c, val_targets_c, True)
 
     # Plot for 1.2a-c
     # MSE
-    plotter.draw_mse_and_miss_rate_bar([mse_list_a, mse_list_b, mse_list_c], N_HIDDEN, "MSE", 2)
+    plotter.draw_mse_and_miss_rate_bar([mse_list_a, mse_list_b, mse_list_c], N_HIDDEN, "MSE batch", 2)
     # Miss Ratio
-    plotter.draw_mse_and_miss_rate_bar([miss_ratio_a, miss_ratio_b, miss_ratio_c], N_HIDDEN, "Miss Ratios", 3)
+    plotter.draw_mse_and_miss_rate_bar([miss_ratio_a, miss_ratio_b, miss_ratio_c], N_HIDDEN, "Miss Ratios batch", 3)
     # task1_2_seq(input_arr, targets)
 
 
