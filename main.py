@@ -65,6 +65,7 @@ def forward_pass(v, w, input_arr):
 
     o_in = np.dot(w, h_out)
     out = (2 / (1 + np.exp(-o_in))) - 1
+
     return h_out, out
 
 
@@ -180,26 +181,33 @@ def task1_2_seq(train_input, train_targets, val_inputs, val_targets, validation=
     mse_list_val = []
     v_list = []
     w_list = []
-    out_list = []
+    out_list = np.zeros(len(val_targets))
     miss_ratio_list = []
     miss_ratio_list_val = []
     sum = 0
 
     for n_hidden in N_HIDDEN:
         init_v, init_w = create_init_weights(n_hidden)
-        v, w, mse, out, miss_ratio = generalised_d_sequential(n_hidden, init_v, init_w, train_input, train_targets)
+        v, w, mse, _, miss_ratio = generalised_d_sequential(n_hidden, init_v, init_w, train_input, train_targets)
         mse_list_train.append(mse)
         miss_ratio_list.append(miss_ratio)
 
+        """
+        input = np.array([[input_arr[0][i]], [input_arr[1][i]], [input_arr[2][i]]])
+        target = np.array([[targets[i]]])
+        """
         if(validation):
-            for val_point in val_inputs:
-                print("val point", val_point)
-                _, val_out = forward_pass(v, w, val_point)
-                print(val_out.shape)
-                sum += (val_targets - val_out) 
-            sum = sum / len(val_out)
-            mse_list_val.append(sum)
-            misses_val = count_misses_per_epoch(val_out, val_targets)
+            for i in range(len(val_inputs.T)):
+                input = np.array([[val_inputs[0][i]], [val_inputs[1][i]], [val_inputs[2][i]]])
+        
+                _, val_out = forward_pass(v, w, input)
+                out_list.put(i, val_out)
+              
+                sum += (val_targets[i] - val_out)**2 
+            sum = sum / len(val_inputs)
+            print("HÄR", sum)
+            mse_list_val.append(sum[0, 0])
+            misses_val = count_misses_per_epoch(out_list.reshape(1, -1), val_targets)
             miss_ratio_list_val.append(misses_val)
 
     

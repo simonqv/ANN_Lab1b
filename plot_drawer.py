@@ -56,15 +56,15 @@ def draw_mse_and_miss_rate_bar(plot_list_batch, plot_list_seq, n_hidden, plot_na
     # Position of bars on x-axis
     ind = np.arange(len(n_hidden))
 
-    width = 0.2
-    print(len(a_bars))
-    print(a_bars_seq[0].shape)
+    width = 1/7
+    #
     # Plotting
     plt.figure(fig_num)
+    print(a_bars)
     plt.bar(ind - 3*width, a_bars, width, label='a) 25% of each')
     plt.bar(ind - 2*width, b_bars,width, label='b) 50% of class A')
     plt.bar(ind - width, c_bars, width, label='c) Special')
-    
+    print("SE", a_bars_seq)
     plt.bar(ind, a_bars_seq, width, label='a) 25% of each')
     plt.bar(ind + width, b_bars_seq, width, label='b) 50% of class A')
     plt.bar(ind + 2*width, c_bars_seq, width, label='c) Special')
