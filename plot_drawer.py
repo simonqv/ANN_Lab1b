@@ -28,13 +28,63 @@ def draw_boundaries(v_list, input_array):
     """
     for v in v_list:
         for i, line in enumerate(v):
-            x_axis =np.linspace(min(input_array[0]), max(input_array[0]), 100)
-            draw_plot(line, x_axis, label=f"Line: {i+1}")
+            x_axis = np.linspace(min(input_array[0]), max(input_array[0]), 100)
+            draw_plot(line, x_axis, label=f"Line: {i + 1}")
+
+
+def draw_mse_and_miss_rate_bar(plot_list, n_hidden, plot_name, fig_num):
+    a_bars = plot_list[0]
+    b_bars = plot_list[1]
+    c_bars = plot_list[2]
+    """
+    mse_a_bars = mses[0]
+    miss_a_bars = misses[0]
+
+    mse_b_bars = mses[1]
+    miss_b_bars = misses[1]
+
+    mse_c_bars = mses[2]
+    miss_c_bars = misses[2]
+    """
+
+    # Position of bars on x-axis
+    ind = np.arange(len(n_hidden))
+
+    width = 0.22
+
+    # Plotting
+    plt.figure(fig_num)
+    plt.bar(ind - width, a_bars, width, label='a) 25% of each')
+    plt.bar(ind, b_bars, width, label='b) 50% of class A')
+    plt.bar(ind + width, c_bars, width, label='c) Special')
+    plt.xlabel('Number of hidden layers')
+    plt.ylabel(plot_name)
+    plt.title(f'{plot_name} for different number of hidden layers')
+    plt.xticks(ind + width / 3, n_hidden)
+
+    # Finding the best position for legends and putting it
+    plt.legend(loc='best')
+    plt.show()
+    """
+    plt.figure(3)
+    plt.bar(ind - width, miss_a_bars, width, label='a) 25% of each')
+    plt.bar(ind, miss_b_bars, width, label='b) 50% of class A')
+    plt.bar(ind + width, miss_c_bars, width, label='c) Special')
+    plt.xlabel('Number of hidden layers')
+    plt.ylabel('Miss Ratio')
+    plt.title('Miss Ratios for different number of hidden layers')
+    plt.xticks(ind + width / 2, ('Xtick1', 'Xtick3', 'Xtick3', '5', '6'))
+
+    # Finding the best position for legends and putting it
+    plt.legend(loc='best')
+    plt.show()
+    """
+
 
 
 def draw_mse_or_miss_rate(mse_list, n_hidden, epochs, plot_title):
+    x_axis = np.linspace(0, epochs, epochs)
     for i, n in enumerate(n_hidden):
-        x_axis = np.linspace(0, epochs, epochs)
         plt.plot(x_axis, mse_list[i], label=f"{plot_title} for {n} hidden nodes ")
 
     plt.ylabel(plot_title)
