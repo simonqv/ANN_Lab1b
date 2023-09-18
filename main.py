@@ -359,7 +359,7 @@ def main():
     mse_list_a, miss_ratio_a = task1_2(input_arr, targets, 0.25, 0.25)
 
     # Task 1.2 b) 50% of a
-    mse_list_b, miss_ratio_b = task1_2(input_arr, targets, 0.5, 1.0)
+    mse_list_b, miss_ratio_b = task1_2(input_arr, targets, 0.5, 0.0)
 
     # Task 1.2 c) special case, here a_frac is left, b_frac is right
     mse_list_c, miss_ratio_c = task1_2(input_arr, targets, 0.2, 0.8, True)
