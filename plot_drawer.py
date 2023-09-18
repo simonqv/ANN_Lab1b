@@ -32,15 +32,37 @@ def draw_boundaries(v_list, input_array):
             draw_plot(line, x_axis, label=f"Line: {i + 1}")
 
 
-def draw_mse_and_miss_rate_bar(plot_list_batch, plot_list_seq, n_hidden, plot_name, fig_num):
+def draw_mse_and_miss_rate_bar(plot_list_batch, plot_list_seq, n_hidden, plot_name, fig_num, only_batch=False):
+
+    # Position of bars on x-axis
+    ind = np.arange(len(n_hidden))
+    print(plot_list_batch)
     a_bars = plot_list_batch[0]
     b_bars = plot_list_batch[1]
     c_bars = plot_list_batch[2]
 
-    a_bars_seq = plot_list_seq[0]
-    b_bars_seq = plot_list_seq[1]
-    c_bars_seq = plot_list_seq[2]
-    
+    if not only_batch:
+        a_bars_seq = plot_list_seq[0]
+        b_bars_seq = plot_list_seq[1]
+        c_bars_seq = plot_list_seq[2]
+        width = 1/7
+        # Plotting
+        plt.figure(fig_num)
+        # print(a_bars)
+        plt.bar(ind - 3 * width, a_bars, width, label='a) batch learning')
+        plt.bar(ind - 2 * width, b_bars, width, label='b) batch learning')
+        plt.bar(ind - width, c_bars, width, label='c) batch learning')
+        # print("SE", a_bars_seq)
+        plt.bar(ind, a_bars_seq, width, label='a) sequential learning')
+        plt.bar(ind + width, b_bars_seq, width, label='b) sequential learning')
+        plt.bar(ind + 2 * width, c_bars_seq, width, label='c) sequential learning')
+    else:
+        width = 1/4
+        plt.figure(fig_num)
+        # print(a_bars)
+        plt.bar(ind - width, a_bars, width, label='a) batch learning')
+        plt.bar(ind, b_bars, width, label='b) batch learning')
+        plt.bar(ind + width, c_bars, width, label='c) batch learning')
 
     """
     mse_a_bars = mses[0]
@@ -53,40 +75,23 @@ def draw_mse_and_miss_rate_bar(plot_list_batch, plot_list_seq, n_hidden, plot_na
     miss_c_bars = misses[2]
     """
 
-    # Position of bars on x-axis
-    ind = np.arange(len(n_hidden))
-
-    width = 1/7
-    #
-    # Plotting
-    plt.figure(fig_num)
-    print(a_bars)
-    plt.bar(ind - 3*width, a_bars, width, label='a) 25% of each')
-    plt.bar(ind - 2*width, b_bars,width, label='b) 50% of class A')
-    plt.bar(ind - width, c_bars, width, label='c) Special')
-    print("SE", a_bars_seq)
-    plt.bar(ind, a_bars_seq, width, label='a) 25% of each')
-    plt.bar(ind + width, b_bars_seq, width, label='b) 50% of class A')
-    plt.bar(ind + 2*width, c_bars_seq, width, label='c) Special')
-    
     plt.xlabel('Number of hidden layers')
     plt.ylabel(plot_name)
     plt.title(f'{plot_name} for different number of hidden layers')
     plt.xticks(ind + width / 6, n_hidden)
-
+    plt.grid()
     # Finding the best position for legends and putting it
     plt.legend(loc='best')
-    plt.show()
-
-
+    # plt.show()
 
 
 def draw_mse_or_miss_rate(mse_list, n_hidden, epochs, plot_title):
     x_axis = np.linspace(0, epochs, epochs)
     for i, n in enumerate(n_hidden):
-        plt.plot(x_axis, mse_list[i], label=f"{plot_title} for {n} hidden nodes ")
+        plt.plot(x_axis, mse_list[i], label=f"{n} hidden nodes ")
 
     plt.ylabel(plot_title)
     plt.xlabel("Epoch")
+    plt.grid()
     plt.title(f"{plot_title} for different number of hidden nodes")
     plt.legend()
