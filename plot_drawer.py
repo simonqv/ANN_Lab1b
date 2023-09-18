@@ -32,10 +32,16 @@ def draw_boundaries(v_list, input_array):
             draw_plot(line, x_axis, label=f"Line: {i + 1}")
 
 
-def draw_mse_and_miss_rate_bar(plot_list, n_hidden, plot_name, fig_num):
-    a_bars = plot_list[0]
-    b_bars = plot_list[1]
-    c_bars = plot_list[2]
+def draw_mse_and_miss_rate_bar(plot_list_batch, plot_list_seq, n_hidden, plot_name, fig_num):
+    a_bars = plot_list_batch[0]
+    b_bars = plot_list_batch[1]
+    c_bars = plot_list_batch[2]
+
+    a_bars_seq = plot_list_seq[0]
+    b_bars_seq = plot_list_seq[1]
+    c_bars_seq = plot_list_seq[2]
+    
+
     """
     mse_a_bars = mses[0]
     miss_a_bars = misses[0]
@@ -50,35 +56,28 @@ def draw_mse_and_miss_rate_bar(plot_list, n_hidden, plot_name, fig_num):
     # Position of bars on x-axis
     ind = np.arange(len(n_hidden))
 
-    width = 0.22
-
+    width = 0.2
+    print(len(a_bars))
+    print(a_bars_seq[0].shape)
     # Plotting
     plt.figure(fig_num)
-    plt.bar(ind - width, a_bars, width, label='a) 25% of each')
-    plt.bar(ind, b_bars, width, label='b) 50% of class A')
-    plt.bar(ind + width, c_bars, width, label='c) Special')
+    plt.bar(ind - 3*width, a_bars, width, label='a) 25% of each')
+    plt.bar(ind - 2*width, b_bars,width, label='b) 50% of class A')
+    plt.bar(ind - width, c_bars, width, label='c) Special')
+    
+    plt.bar(ind, a_bars_seq, width, label='a) 25% of each')
+    plt.bar(ind + width, b_bars_seq, width, label='b) 50% of class A')
+    plt.bar(ind + 2*width, c_bars_seq, width, label='c) Special')
+    
     plt.xlabel('Number of hidden layers')
     plt.ylabel(plot_name)
     plt.title(f'{plot_name} for different number of hidden layers')
-    plt.xticks(ind + width / 3, n_hidden)
+    plt.xticks(ind + width / 6, n_hidden)
 
     # Finding the best position for legends and putting it
     plt.legend(loc='best')
     plt.show()
-    """
-    plt.figure(3)
-    plt.bar(ind - width, miss_a_bars, width, label='a) 25% of each')
-    plt.bar(ind, miss_b_bars, width, label='b) 50% of class A')
-    plt.bar(ind + width, miss_c_bars, width, label='c) Special')
-    plt.xlabel('Number of hidden layers')
-    plt.ylabel('Miss Ratio')
-    plt.title('Miss Ratios for different number of hidden layers')
-    plt.xticks(ind + width / 2, ('Xtick1', 'Xtick3', 'Xtick3', '5', '6'))
 
-    # Finding the best position for legends and putting it
-    plt.legend(loc='best')
-    plt.show()
-    """
 
 
 

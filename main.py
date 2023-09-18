@@ -192,16 +192,19 @@ def task1_2_seq(train_input, train_targets, val_inputs, val_targets, validation=
         miss_ratio_list.append(miss_ratio)
 
         if(validation):
-            for i in range(len(train_input)):
-                _, val_out = forward_pass(v, w, val_inputs)
-                sum += (val_targets - val_out) ** 2
+            for val_point in val_inputs:
+                print("val point", val_point)
+                _, val_out = forward_pass(v, w, val_point)
+                print(val_out.shape)
+                sum += (val_targets - val_out) 
             sum = sum / len(val_out)
             mse_list_val.append(sum)
             misses_val = count_misses_per_epoch(val_out, val_targets)
             miss_ratio_list_val.append(misses_val)
 
     
-
+    """
+    
     # make MSE plot
     plt.figure(1)
     plotter.draw_mse_or_miss_rate(mse_list_train, N_HIDDEN, EPOCHS, "Mean Square Error")
@@ -211,7 +214,7 @@ def task1_2_seq(train_input, train_targets, val_inputs, val_targets, validation=
     plt.figure(4)
     plotter.draw_mse_or_miss_rate(miss_ratio_list, N_HIDDEN, EPOCHS, "Misclassification Rate")
     plt.show()
-
+    """
     return mse_list_val, miss_ratio_list_val
 
 
@@ -369,9 +372,9 @@ def main():
 
     # Plot for 1.2a-c
     # MSE
-    plotter.draw_mse_and_miss_rate_bar([mse_list_a, mse_list_b, mse_list_c], N_HIDDEN, "MSE batch", 2)
+    plotter.draw_mse_and_miss_rate_bar([mse_list_a, mse_list_b, mse_list_c], [mse_seq_a, mse_seq_b, mse_seq_c], N_HIDDEN, "MSE batch", 2)
     # Miss Ratio
-    plotter.draw_mse_and_miss_rate_bar([miss_ratio_a, miss_ratio_b, miss_ratio_c], N_HIDDEN, "Miss Ratios batch", 3)
+    plotter.draw_mse_and_miss_rate_bar([miss_ratio_a, miss_ratio_b, miss_ratio_c], [miss_seq_a, miss_seq_b, miss_seq_c], N_HIDDEN, "Miss Ratios batch", 3)
     # task1_2_seq(input_arr, targets)
 
 
