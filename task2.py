@@ -5,7 +5,7 @@ from sklearn.neural_network import MLPRegressor as mlpR
 VAL_START = 301
 VAL_END = 1275 # Fixed, should not be changed (1300 - 25 for back in time steps)
 TEST_START = 1300
-EPOCHS = 200 # default in sklearn is 200
+EPOCHS = 400  # default in sklearn is 200
 N = 1500
 
 def generate_data():
@@ -39,12 +39,13 @@ def generate_data():
         test_set[t] = test_t
         test_targets[t] = test_target
 
-    return train_set, train_targets, test_set, test_targets
+    return train_set, train_targets, test_set, test_targets, x
 
 
 def train_model(train_set, targets, model):
     regr_model = model.fit(train_set, targets)
     return regr_model
+
 
 def extract_5_prev_and_target(t, time_series):
     new_slice = time_series[t-20 : t+5 : 5]
@@ -52,26 +53,126 @@ def extract_5_prev_and_target(t, time_series):
     return new_slice, target
 
 
+def make_plots(y_out, lb, color, test_targets=None, train_targets=None):
+    # plt.plot(np.arange(N)[VAL_START:VAL_END], train_targets, label="Training")
+    if test_targets is not None:
+        plt.plot(np.arange(N)[TEST_START:TEST_START+200 - 5], test_targets[:-5], label="Target Output", c='grey', ls="--")
+    plt.plot(np.arange(N)[TEST_START:TEST_START+200 - 5], y_out[:-5], label=lb, c=color)
+    plt.legend()
 
-def main():
-    model = mlpR([3, 2], 'logistic', 'sgd', learning_rate='constant', 
-                    batch_size=200, learning_rate_init=0.1, max_iter=EPOCHS, 
-                    shuffle=False, momentum=0.9, early_stopping=True, validation_fraction=0.1)
+def make_train_val_start_plot(x):
+    plt.plot(np.linspace(VAL_START, N, len(x[301+5:])) , x[301+5:])
 
-    train_set, train_targets, test_set, test_targets = generate_data()   
 
-    plt.plot(np.arange(N)[VAL_START:VAL_END], train_targets)
-    plt.plot(np.arange(N)[TEST_START:TEST_START+200], test_targets)
+def add_noise(train_set, shape):
+    mean = 0
+    std_deviation = [0.05, 0.15]
+    na1 = np.random.normal(mean, std_deviation[0], shape)
+    na2 = np.random.normal(mean, std_deviation[1], shape)
     
-    regressor = train_model(train_set, train_targets, model)
-    y_out = regressor.predict(test_set)
-    print(y_out)
-    plt.plot(np.arange(N)[TEST_START:TEST_START+200], y_out)
+    return train_set + na1,  train_set + na2
 
+    
+def main():
+    
+    print("\nFirst part of assignment 2\n")
+
+    train_set, train_targets, test_set, test_targets, x = generate_data() 
+
+    plt.figure(1)
+    make_train_val_start_plot(x)
+    plt.xlabel("t")
+    plt.ylabel("x(t)")
+    plt.title("Mackey-Glass time series (no noice)")
+
+    hidden_1 = [3, 4, 5]
+    hidden_2 = [2] # [2, 4, 6]
+    scores = {}
+    predictions = {}
+    c = 0
+    for i1, h1 in enumerate(hidden_1):
+        for i2, h2 in enumerate(hidden_2):
+            model = mlpR([h1, h2], 'logistic', 'sgd', learning_rate='constant', 
+                            batch_size=20, learning_rate_init=0.1, max_iter=EPOCHS, 
+                            shuffle=False, momentum=0.9, early_stopping=True, 
+                            validation_fraction=0.1, alpha=0.0001)
+
+    
+            regressor = train_model(train_set, train_targets, model)
+            val_scores = regressor.validation_scores_
+            y_out = regressor.predict(test_set)
+            scores[(h1, h2)] = (regressor.best_validation_score_)
+            predictions[(h1, h2)] = y_out
+            plt.figure(13)
+            plt.plot(val_scores, label=f"({h1} x {h2}) hidden layers")
+            plt.legend()
+            plt.ylabel("Score, R²")
+            plt.xlabel("Epoch")
+            plt.title("Validation Scores")
+
+            print(f"R² scores ({h1} x {h2}) hidden layers", regressor.best_validation_score_)
+            # plt.figure(2 + c)
+            # make_plots(train_targets, test_targets, y_out)
+            c +=1
+    
+    best_score = max(scores, key=lambda k: scores[k])
+    worst_score = min(scores, key=lambda k: scores[k])
+    print(f"Best: {best_score}. Worst: {worst_score}")
+
+    plt.figure(14)
+    make_plots(predictions[best_score], f"Predictions \"best\" score: {best_score}", 'r', test_targets)
+    make_plots(predictions[worst_score], f"Predictions \"worst\" score: {worst_score}", 'b')
+    plt.xlabel("t")
+    plt.ylabel("x(t)")
+    plt.title("Test performance")
+
+    plt.legend()
     plt.show()
 
-    #for i in range(len(test_set)):
+    # 3.2.4 Add Noise
+    print("\nSecond part of assignment 2\n")
 
-    #   regerssor.predict(test_set)
-    
+    h1_best = best_score[0]
+    h2_best = [3, 6, 9]
+
+    new_train_set1, new_train_set2 = add_noise(train_set, train_set.shape)
+    new_training = [new_train_set1, new_train_set2]
+
+
+    for h in h2_best:
+        model = mlpR([h1_best, h], 'logistic', 'sgd', learning_rate='constant', 
+                            batch_size=20, learning_rate_init=0.1, max_iter=EPOCHS, 
+                            shuffle=False, momentum=0.9, early_stopping=True, 
+                            validation_fraction=0.1, alpha=0.0001)
+
+        regressor = train_model(new_train_set1, train_targets, model)
+        val_scores = regressor.validation_scores_
+        y_out = regressor.predict(test_set)
+        scores[(h1_best, h)] = (regressor.best_validation_score_)
+        predictions[(h1_best, h)] = y_out
+        
+        plt.figure(15)
+        plt.plot(val_scores, label=f"({h1_best} x {h}) hidden layers")
+        plt.legend()
+        plt.ylabel("Score, R²")
+        plt.xlabel("Epoch")
+        plt.title("Validation Scores")
+
+        print(f"R² scores ({h1_best} x {h}) hidden layers", regressor.best_validation_score_)
+        # plt.figure(2 + c)
+        # make_plots(train_targets, test_targets, y_out)
+        c +=1
+
+
+    plt.figure(16)
+    make_plots(predictions[best_score], f"Predictions \"best\" score: {best_score}", 'r', test_targets)
+    make_plots(predictions[worst_score], f"Predictions \"worst\" score: {worst_score}", 'b')
+    plt.xlabel("t")
+    plt.ylabel("x(t)")
+    plt.title("Test performance")
+    plt.show()
+
+
+
+
 main()
