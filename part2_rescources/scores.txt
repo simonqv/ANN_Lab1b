@@ -1,0 +1,54 @@
+VAL_START = 301
+VAL_END = 1275 # Fixed, should not be changed (1300 - 25 for back in time steps)
+TEST_START = 1300
+EPOCHS = 200  # default in sklearn is 200
+N = 1500
+
+beta = 0.2
+gamma = 0.1
+n = 10
+tau = 25
+
+First part of assignment 2
+
+MODEL WITHOUT NOISE
+model = mlpR([h1, h2], 'logistic', 'sgd', learning_rate='constant', 
+                            batch_size=20, learning_rate_init=0.1, max_iter=EPOCHS, 
+                            shuffle=False, momentum=0.9, early_stopping=True, 
+                            validation_fraction=0.1, alpha=0.0001)
+
+
+R² scores 
+(3 x 2) 0.9689307543747976
+(3 x 4) 0.9639223106542544
+(3 x 6) 0.9522250964201656
+
+(4 x 2) 0.96455508356649 
+(4 x 4) 0.96087495272222
+(4 x 6) 0.9643412793952448
+
+(5 x 2) 0.952154573905897
+(5 x 4) 0.9569370135614619
+(5 x 6) 0.9518587920324406
+
+Best: (3, 2). Worst: (5, 6)
+
+
+Second part of assignment 2
+
+MODEL WITH NOISE
+ model = mlpR([h1_best, h], 'logistic', 'sgd', learning_rate='constant', 
+                                batch_size=20, learning_rate_init=0.1, max_iter=EPOCHS, 
+                                shuffle=False, momentum=0.9, early_stopping=True, 
+                                validation_fraction=0.1, alpha=0.0001)
+
+
+R² scores 
+noise 1 (0.05)
+(3 x 3) 0.8772736193972537
+(3 x 6) 0.9268577088918282
+(3 x 9) 0.7991150250731918
+noise 2 (0.15)
+(3 x 3) 0.7534582250372617
+(3 x 6) 0.7087993968083534
+(3 x 9) 0.7133040715363941
